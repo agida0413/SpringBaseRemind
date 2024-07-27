@@ -44,6 +44,7 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+<<<<<<< HEAD
 		
 		<!-- https://mvnrepository.com/artifact/org.aspectj/aspectjweaver -->
 <dependency>
@@ -57,6 +58,8 @@
       <version>1.9.5</version>
   </dependency>
 
+=======
+>>>>>>> refs/remotes/origin/master
 	</dependencies>
 
 	<build>
