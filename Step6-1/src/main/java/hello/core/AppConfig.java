@@ -42,16 +42,26 @@ public class AppConfig {//구현객체 관리 ,설정
 	 * 
 	 * 
 	 */
+	
+	
+	//@Bean memberService - > new MemoryMemberRepository()
+	//@Bean orderService - > new MemoryMemberRepository() 
+	//memoryMemberRepository는 두번 생성될까? 
+	
+	
 	@Bean
 	public MemberService memberService() { //키
+		System.out.println("call Appconfig.memberService");
 		return new MemberServiceImpl( memberRepository());//밸류 로 컨테이너에 등록 
 	}
 	@Bean
 	public MemberRepository memberRepository() {
+		System.out.println("call Appconfig.memberRepository");
 		return new MemoryMemberRepository();
 	}
 	@Bean
 	public OrderService orderService() {
+		System.out.println("call Appconfig.orderService");
 		return new OrderServiceImpl(memberRepository(),discountPolicy());
 	}
 	@Bean

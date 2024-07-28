@@ -1,21 +1,28 @@
 package hello.core.order;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import hello.core.discount.DiscountPolicy;
 import hello.core.discount.FixDiscountPolicy;
 import hello.core.discount.RateDiscountPolicy;
 import hello.core.member.Member;
 import hello.core.member.MemberRepository;
 import hello.core.member.MemoryMemberRepository;
-
+import lombok.RequiredArgsConstructor;
+@Component
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService{
 
 	private final MemberRepository memberRepository;
 	private final DiscountPolicy discountPolicy; 
-	public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
-		super();
-		this.memberRepository = memberRepository;
-		this.discountPolicy = discountPolicy;
-	}
+	
+//	@Autowired
+//	public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
+//		super();
+//		this.memberRepository = memberRepository;
+//		this.discountPolicy = discountPolicy;
+//	}
 	// 추상클래스에만 의존하므로 dip 성립 ,하지만 인터페이스 구현체가 생성되지않으므로 여전히 문제 
 	//해결방안 
 	// 누군가가 클라이언트인 orderserviceImpl에 discountPolicy 구현객체를 대신생성해주고 주입해주어야 한다 .
@@ -47,6 +54,11 @@ public class OrderServiceImpl implements OrderService{
 		
 		
 		return new Order(memberId,itemName,itemPrice,discountPrice);
+	}
+	
+	
+	public MemberRepository getMemberRepository() {
+		return memberRepository;
 	}
 
 }

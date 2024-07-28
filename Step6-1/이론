@@ -1,1 +1,136 @@
 2024/07/27
+
+스프링 컨테이너 동작 
+
+1. 스프링 컨테이너 생성 
+
+자바기반 , xml 기반 컨테이너 생성가능 
+new AnnotationConfigApplicationContext(AppConfig.class) < = appconfig 설정정보를 보고 컨테이너 구성 
+키 : 빈이름 밸류 : 빈객체
+
+
+@Bean
+	public MemberService <  memberService > () { // < > 부분 키 로 등록 
+	
+	
+		return new <   MemberServiceImpl( memberRepository());  > //밸류 로 컨테이너에 등록 
+	}
+	
+	빈 이름은 항상 다르게 부여 해야한다 .
+	
+2. 의존관계 설정 = > 동적인 객체 즉 고정할인 구현체 , 비율할인구현체중 어떤것인지 그리고 어떤인터페이스가 어떤 인터페이스를 의존하고있는지 등 설정	(설정 정보 참조 )
+
+결론: 실제 스프링 라이프 사이클은 빈 생성 후 의존관계 주입   
+그런데 자바로 코드를 짜면 빈생성중에 의존관계가 된다  . = > 추후 학습 
+
+	
+	
+	2024/07/28
+	======================================================================================
+	
+	스프링 빈이 같은타입이 둘이상일때 오류 - > 반이름을 저장 
+	이름으로 꺼낼수 있다 .
+	
+	[예시]
+	
+	public class FindTest {
+
+	
+	AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(TestConfig.class);
+	@Test
+	@DisplayName("부모타입으로 조회시 , 자식이 둘 이상있으면 중복 오류가 발생 ")
+	void findBeanByParentTypeDuplicate () {
+	
+		
+		assertThrows(NoUniqueBeanDefinitionException.class, ()->
+		ac.getBean(DiscountPolicy.class));
+	}
+
+	@Test
+	@DisplayName("부모타입으로 조회시 , 자식이 둘 이상있으면 빈 이름을 지정한다   ")
+	void findBeanByParentTypeBeanName () {
+	
+    DiscountPolicy rateDiscountPolicy=	ac.getBean("rateDiscountPolicy",DiscountPolicy.class);
+		assertThat(rateDiscountPolicy).isInstanceOf(RateDiscountPolicy.class);
+		
+	}
+	@Test
+	@DisplayName("특정 하위 타입으로 조회")
+	void findBeanByParentTypeSubtype () {
+	RateDiscountPolicy bean = ac.getBean(RateDiscountPolicy.class);
+	assertThat(bean).isInstanceOf(RateDiscountPolicy.class);
+	
+    
+		
+	
+	}
+	@Test
+	@DisplayName("부모타입으로 모두 조회")
+	void findAllbean() {
+		Map<String, DiscountPolicy> beansOfType=ac.getBeansOfType(DiscountPolicy.class);
+		assertThat(beansOfType.size()).isEqualTo(2);
+		
+		for(String key : beansOfType.keySet()) {
+			System.out.println("key="+key +"value="+beansOfType.get(key));
+		}
+	}
+	
+	@Test
+	@DisplayName("부모타입으로 모두 조회 -object")
+	void findAllbeanObj() {
+		Map<String, Object> beansOfType=ac.getBeansOfType(Object.class);
+		
+		
+		for(String key : beansOfType.keySet()) {
+			System.out.println("key="+key +"value="+beansOfType.get(key));
+		}
+	}
+	
+	@Configuration
+	static class TestConfig {
+		@Bean
+		public DiscountPolicy rateDiscountPolicy() {
+			return new RateDiscountPolicy();
+		}
+		
+		@Bean
+		public DiscountPolicy fixDiscountPolicy() {
+			return new FixDiscountPolicy();
+		}
+	}
+	
+	
+	
+	
+	- BeanFactory = > 스프링 컨테이너의 최상위 인터페이스 
+		스프링 빈을 관리하고 조회하는 역할 ( getBean)
+		
+	- ApplicationContext 
+		BeanFactory기능을 상속 
+		BeanFactory와 차이가 뭘까 ? 수많은 부가기능
+			1) messageSource , ResourceLoader 등 BeanFactory 외 다른 인터페이스도 제공받는다.
+			 messageSource :  한국에서 들어오면 - > 한국어 , 영어권- > 영어
+			2)환경변수 : 로컬,개발 ,운영등을 구분해서 처리 
+			3)에플리케이션 이벤트 : 이벤트를 발행하고 구독하는 모델을 지원 
+			4)편리한 리소스 조회 : 파일,클래스패스 ,외부 등에서 리소스를 편리하게 조회
+			
+    ****스프링 빈 설정 메타 정보 - BeanDefinition******
+    **역할과 구현을 개념적으로 나누었다 .
+     )xml을 읽어서 BeanDefinition을 만들면된다.
+     )자바코드를 읽어서 BeanDefinition을 만들면된다 .
+     스프링 컨테이너는 자바기반인지,xml기반인지 몰라도 된다 . BeanDefinition만 알면된다 . 
+     
+    @Bean , <bean> 하나당 메타정보가 생성  = > 기반으로 스프링 빈 생성
+    
+    스프링 컨테이너 ===> BeanDefinition 의존 
+    					\        \
+    		appconfig.class     appconfig.xml	
+    
+			각각의 Reader가 있다 = > 읽어서 BeanDefinition 생성 
+			EX)AnnotaionBeanDeefinitionReader
+			
+			
+			
+			*********싱글톤 컨테이너*****************
+			
+	
