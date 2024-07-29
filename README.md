@@ -39,15 +39,18 @@ STEP 6-1  :
 6) 빈 생명주기 콜백 / initializingBean,DisposableBean/빈등록  초기화,소멸 메서드 / @PostConstruct, @PreDestroy
 
 
+#
+Step7,8
+
+
 
 2024/07/29
 
 
 
-7)  빈스코프 (싱글턴, 프로토 타입)
+1)  빈스코프 (싱글턴, 프로토 타입)
 
  
+2) 웹 스코프
 
-8) 웹 스코프
-6) 빈 스코프 /프록시 
    
