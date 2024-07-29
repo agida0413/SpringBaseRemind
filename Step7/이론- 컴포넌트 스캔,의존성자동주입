@@ -1,0 +1,78 @@
+xml이나 @Bean 을통해 빈을 등록하는것은 상당히 힘들다 .
+설정정보가 없어도 자동으로 스프링빈을 등록하는 컴포넌트 스캔이라는 기능을 제공한다 . 
+
+
+@componenet: 빈등록
+@autowired: 의존성 주입
+
+ComponentScan시에는 클래스의 이름의 맨앞글자만 소문자로 바뀐 상태로 빈 이름(키)로 등록된다 
+MemService ===> memService
+
+ 빈이름 직접지정
+ @Component("빈이름")
+ 
+ 스캔 시작위치 지정 
+ @ComponentScan(baskePackages="hello.core") 
+ @ComponentScan(basePackageClasses = AutoAppConfig.class)
+ 디폴트 :  현재 부터 하위폴더 스캔 
+ 
+
+ 
+ @autowired 
+ 스프링 컨테이너에 등록되어있는 같은 타입을 찾아 의존성을 주입해준다 .
+ 같은 타입이 여러개면 마찬가지로 에러
+ 
+ 컴포넌트 스캔대상 
+ @component
+ =>포함 상속은아니지만 스프링이 지원하는 기능이다 . 
+ @controller
+ @service
+ @repository
+ @configuration 
+ 
+ 
+ 	@Test
+	void basicScan() {
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(AutoAppConfig.class);
+		
+		MemberService memberService  = ac.getBean(MemberService.class);
+		Assertions.assertThat(memberService).isInstanceOf(MemberService.class);
+		
+	}
+	
+	
+	*****필터******
+	
+	@Test
+	void filterScan() {
+	AnnotationConfigApplicationContext ac = new AnnotationConfigApplicationContext(ComponentFilterAppConfig.class);
+	
+	BeanA beanA = ac.getBean("BeanA",BeanA.class);
+	
+	assertThat(beanA).isNotNull();
+	
+BeanB beanB=	ac.getBean("BeanB",BeanB.class);
+//등록안됌 (제외)
+	}
+	
+	
+	@Configuration
+	@ComponentScan(includeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION,classes = MyIncludeComponent.class),
+				excludeFilters = @ComponentScan.Filter(type=FilterType.ANNOTATION,classes = MyExcludeComponent.class)
+			)
+	static class ComponentFilterAppConfig{
+		
+	}
+	
+	*****중복등록과 충돌*******
+	
+	컴포넌트 스캔에서 같은 빈이름 등록시 
+	
+	자동빈 등록 vs 자동빈  등록 오류발생 
+	
+	수동빈 등록 vs 자동빈 등록
+	=>수동등록 빈 우선권 = > 자동빈을 오버라이딩한다 .
+	부트에서는 오류 기본값이 오버라이딩 false  = > 바꾸고싶으면 true로 설정값 바꿔주면된다. 
+	
+	
+	

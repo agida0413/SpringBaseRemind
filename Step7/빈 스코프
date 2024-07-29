@@ -1,0 +1,98 @@
+
+
+스프링 빈은 디폴트가 싱글톤 스코프 
+
+싱글톤: 기본 스코프, 스프링 컨테이너의 시작과 종료까지 유지되는 가장 넓은 범위의 스코프이다.
+프로토타입: 스프링 컨테이너는 프로토타입 빈의 생성과 의존관계 주입까지만 관여하고 더는 관리하지 않는 매우
+짧은 범위의 스코프이다.
+
+
+싱글톤 스코프의 빈을 스프링 컨테이너에요청- > 본인이 관리하는 스프링 빈 반환 
+프로토 타입 스코프 빈을 컨테이너에 요청 -> 컨테이너는 이 시점에 프로토타입 빈을 생성하고 , 의존관계 주입을 한다 . => 반환 후 관리x (새롭게 계속 생성하는것 이다.)
+핵심은 스프링 컨테이너는 프로토 타입 빈을 생성하고 ,의존관계 주입 , 초기화 까지만 처리한다는 것이다. 프로토 타입 민을 관리 할 책임은 프로토타입 빈을 받은 클라이언트에 있다 . @PreDestroy 같은 종료 메서드가 호출되지 않는다.
+웹 관련 스코프
+request: 웹 요청이 들어오고 나갈때 까지 유지되는 스코프이다.
+session: 웹 세션이 생성되고 종료될 때 까지 유지되는 스코프이다.
+application: 웹의 서블릿 컨텍스트와 같은 범위로 유지되는 스코프이다
+
+
+프로토타입 스코프 -싱글톤 빈과 함꼐 사용시 문제점 
+
+
+
+
+@Test
+	void prototypeFind() {
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(prototypeBean.class);
+		prototypeBean prototypeBean1 = ac.getBean(prototypeBean.class);
+		prototypeBean1.addCount();
+		assertThat(prototypeBean1.getCount()).isEqualTo(1);
+		
+		prototypeBean prototypeBean2 = ac.getBean(prototypeBean.class);
+		prototypeBean2.addCount();
+		assertThat(prototypeBean1.getCount()).isEqualTo(1);
+	}
+	
+	@Scope("prototype")
+	static class prototypeBean{
+		private int count = 0;
+		
+		public void addCount() {
+			count++;
+		}
+		
+		public int getCount() {
+			return count;
+		}
+		
+		@PostConstruct
+		public void init() {
+			System.out.println("prototypeBean.init"+this);
+		}
+		
+		@PreDestroy
+		public void destroy() {
+			System.out.println("prototypeBean.destory");
+		}
+	}
+	
+	@Test
+	void singletonClientusePrototype() {
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(ClitenBean.class,prototypeBean.class);
+		ClitenBean clientBean1 = ac.getBean(ClitenBean.class);
+		int count1 = clientBean1.logic();
+		assertThat(count1).isEqualTo(1);
+		
+		ClitenBean clientBean2 = ac.getBean(ClitenBean.class);
+		int count2 = clientBean1.logic();
+		assertThat(count2).isEqualTo(1);
+	}
+	
+	static class ClitenBean{
+		
+		//싱글톤 빈이 프로토타입을 포함하 고 있을떄 
+		
+		//private final prototypeBean prototypebean; //생성시점에 주입 , 같은것을 사용 
+
+			@Autowired
+			private ObjectProvider<prototypeBean> provider;//DL DEPENDENCY LOOKCUP 을 도와줌 
+			
+			
+		
+		
+		public int logic() {
+			prototypeBean prototypebean = provider.getObject();//DL DEPENDENCY LOOKCUP 을 도와줌 
+			prototypebean.addCount();
+		return	prototypebean.getCount();
+		}
+		
+		
+		
+	}
+
+	
+	
+	
+	웹 스코프 
+	
+	
