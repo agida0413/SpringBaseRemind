@@ -1,0 +1,302 @@
+의존관계 주입 방법 
+
+생성자 주입 
+특징 : 생성자 호출 시점에 딱 1번만 호출되는 것이 보장된다 .***불변 ,필수 의존관계 ****
+final 을사용해서 필수적으로 값을 넣게 된다 .
+특징 : 빈등록시 의존관계가 동시에 일어난다 . = > 빈등록시 생성자를 호출해야하기 때문에 
+
+중요! 생성자가 하나만 있으면 autowired 생략가능 
+
+
+수정자 주입 , 필드주입은 스프링 빈등록 후 의존관계주입을 한다 .(라이프 사이클) 
+
+수정자 주입
+특징: 선택,변경 가능성이 있는 의존관계 @required=false 
+
+필드 주입 
+
+스프링이 아닌 외부 (순수 자바) 에서 테스트가 매우 힘들다. set함수를 만들어 새롭게 포함하고 있는 인터페이스의 구현체를 생성시켜줘야한다 .
+DI 프레임워크가 없으면 아무것도 할수 가 없다 . 
+
+
+일반메서드 주입
+아무 메서드에서나 주입가능
+
+
+
+*****옵션처리 ***********
+
+@Test
+	void AutowiredTest() {
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(TestBean.class);
+		
+	}
+	
+	static class TestBean {
+		@Autowired(required = false) //메서드 자체가 호출이안됌 
+		public void setNoBean1(Member noBean1) {
+			System.out.println("nobeam="+noBean1);
+		}
+		
+		@Autowired
+		public void setNoBean2(@Nullable Member noBean2) { //호출은 되고 , null로 리턴된다 .
+			System.out.println("nobeam="+noBean2);
+		}
+		
+		@Autowired
+		public void setNoBean2(Optional<Member> noBean3) {//Optional.empty 리턴 
+			System.out.println("nobeam="+noBean3);
+		}
+		
+	}
+	
+	
+	
+	****왜 생성자 주입을 선택해야할까 ? ? ?*******
+	1.대부분 의존관계 주입은 한번 일어나면 의존관계를 변경할 일이 없다 . 오히려 대부분 의존관계는 애플리케이션 종료전까지 변하면 안된다 .
+	
+	2.누락 : 프레임 워크없이 순수한 자바코드를 단위테스트 하는 경우 , 눈에 의존관계가 안보인다 .
+	
+	3.final 키워드를 넣을수 있다 .= = = > 바뀌지 않는다 . 생성자단계에서 final 키워드가있으면 필수가 때문에 컴파일오류가 나서 쉽게 버그를 찾을 수 있다 .
+	
+	
+	***생성자 주입외에 다른 주입에  final 을 넣을 수 없는이유 - > 나머지 주입은 생성자 이후에 호출되기 때문에 
+	
+	
+	
+	
+	
+	
+	
+	****롬복과 최신 트랜드 ******
+	
+	생성자주입이 가장 좋은것은 알겠다 .하지만 코드가 너무 길어진다 .필드주입처럼 편리하게 사용할 수 있을까 ?
+	
+	
+	
+	1. 생성자가 하나면 @autowired 생략 
+	
+	2.lombok 라이브러리 
+	
+	
+	
+	@Component
+	@RequiredArgsConstructor  // 필요한 의존성 + 생성자 
+	public class OrderServiceImpl implements OrderService{
+
+	private final MemberRepository memberRepository;
+	private final DiscountPolicy discountPolicy; 
+	
+	
+	
+	****조회 빈이 2개이상 문제 
+	
+	@Autowired 는 타입(Type)으로 조회한다.
+
+
+	DiscountPolicy 의 하위 타입인 FixDiscountPolicy , RateDiscountPolicy 둘다 스프링 빈으로 선언
+		@Component
+		public class FixDiscountPolicy implements DiscountPolicy {}
+		
+		
+		@Component
+		public class RateDiscountPolicy implements DiscountPolicy {}
+		
+		그리고 이렇게 의존관계 자동 주입을 실행하면 ```
+		@Autowired
+		private DiscountPolicy discountPolicy
+		
+		NoUniqueBeanDefinitionException 오류가 발생한다.
+
+	이때 하위 타입으로 지정할 수 도 있지만, 하위 타입으로 지정하는 것은 DIP를 위배하고 유연성이 떨어진다. 그리고 이
+	름만 다르고, 완전히 똑같은 타입의 스프링 빈이 2개 있을 때 해결이 안된다.
+	스프링 빈을 수동 등록해서 문제를 해결해도 되지만, 의존 관계 자동 주입에서 해결하는 여러 방법이 있다
+	
+	@autowired 는 타입매칭을 시도하고 , 이떄 여러 빈이 있으면 필드이름 ,파라미터 이름으로 빈 이름을 추가 매칭한다 .
+	1. autowired 필드명 매칭
+	
+	필드 명,파라미터이름을 빈 이름으로 변경 
+		@Autowired
+		private DiscountPolicy rateDiscountPolicy
+	
+	2. @Quilfier 끼리 매칭
+	
+	@Qualifier 는 추가 구분자를 붙여주는 방법이다. 주입시 추가적인 방법을 제공하는 것이지 빈 이름을 변경하는 것
+	은 아니다.
+	빈 등록시 @Qualifier를 붙여 준다. ```java
+	@Component
+	@Qualifier("mainDiscountPolicy")
+	public class RateDiscountPolicy implements DiscountPolicy {} ```
+	```java
+	@Component
+	@Qualifier("fixDiscountPolicy")
+	public class FixDiscountPolicy implements DiscountPolicy
+	
+	
+	
+	
+	주입시에 @Qualifier를 붙여주고 등록한 이름을 적어준다.
+	생성자 자동 주입 예시 ```java
+	@Autowired
+	public OrderServiceImpl(MemberRepository memberRepository,
+	 @Qualifier("mainDiscountPolicy") DiscountPolicy
+	discountPolicy) {
+	 this.memberRepository = memberRepository;
+	 this.discountPolicy = discountPolicy;
+	}
+	
+	
+	@Qualifier 정리
+	1. @Qualifier끼리 매칭
+	2. 빈 이름 매칭
+	3. NoSuchBeanDefinitionException 예외 발생
+	
+	3. @primary 사용 
+	
+	
+		@Primary 는 우선순위를 정하는 방법이다. @Autowired 시에 여러 빈이 매칭되면 @Primary 가 우선권을 가진다.
+		rateDiscountPolicy 가 우선권을 가지도록 하자. ```java
+		@Component
+		@Primary
+		public class RateDiscountPolicy implements DiscountPolicy {}
+		@Component
+		public class FixDiscountPolicy implements DiscountPolicy {} ```
+		사용코드 ```java
+		//생성자
+		@Autowired
+		public OrderServiceImpl(MemberRepository memberRepository,
+		 DiscountPolicy discountPolicy) {
+		 this.memberRepository = memberRepository;
+		 this.discountPolicy = discountPolicy;
+		}
+		//수정자
+		@Autowired
+		public DiscountPolicy setDiscountPolicy(DiscountPolicy discountPolicy) {
+		 this.discountPolicy = discountPolicy;
+		
+		
+		
+		
+		@Primary, @Qualifier 활용
+	코드에서 자주 사용하는 메인 데이터베이스의 커넥션을 획득하는 스프링 빈이 있고, 코드에서 특별한 기능으로 가끔 사
+	용하는 서브 데이터베이스의 커넥션을 획득하는 스프링 빈이 있다고 생각해보자. 메인 데이터베이스의 커넥션을 획득하
+	는 스프링 빈은 @Primary 를 적용해서 조회하는 곳에서 @Qualifier 지정 없이 편리하게 조회하고, 서브 데이터베
+	이스 커넥션 빈을 획득할 때는 @Qualifier 를 지정해서 명시적으로 획득 하는 방식으로 사용하면 코드를 깔끔하게
+	유지할 수 있다. 물론 이때 메인 데이터베이스의 스프링 빈을 등록할 때 @Qualifier 를 지정해주는 것은 상관없다.
+	
+	
+	우선순위
+	@Primary 는 기본값 처럼 동작하는 것이고, @Qualifier 는 매우 상세하게 동작한다. 이런 경우 어떤 것이 우선권을
+	가져갈까? 스프링은 자동보다는 수동이, 넒은 범위의 선택권 보다는 좁은 범위의 선택권이 우선 순위가 높다. 따라서 여
+	기서도 @Qualifier 가 우선권이 높다
+	
+	
+	***어노테이션 직접제작*****
+	
+	@Qualifier("mainDiscountPolicy") 이렇게 문자를 적으면 컴파일시 타입 체크가 안된다
+	
+	@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, 
+	ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+	@Retention(RetentionPolicy.RUNTIME)
+	@Documented
+	@Qualifier("mainDiscountPolicy")
+	public @interface MainDiscountPolicy {
+	}
+	
+	@Component
+	@MainDiscountPolicy
+	public class RateDiscountPolicy implements DiscountPolicy {} ```
+	```java
+	//생성자 자동 주입
+	@Autowired
+	public OrderServiceImpl(MemberRepository memberRepository,
+	 @MainDiscountPolicy DiscountPolicy discountPolicy) 
+		this.memberRepository = memberRepository;
+	 this.discountPolicy = discountPolicy;
+	}
+	//수정자 자동 주입
+	@Autowired
+	public DiscountPolicy setDiscountPolicy(@MainDiscountPolicy DiscountPolicy
+	discountPolicy) {
+	 this.discountPolicy = discountPolicy;
+	}
+	
+	
+	
+	*****조회한 빈이 모두 필요할떄 ********
+	
+	@Test
+	void findAllBean() {
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(AutoAppConfig.class, DiscountService.class);
+		
+		
+	DiscountService discountService=	ac.getBean(DiscountService.class);
+	Member member= new Member(1l, "userA", Grade.VIP);
+	
+	int discountPrice= discountService.discount(member, 10000, "fixDiscountPolicy");
+	
+	Assertions.assertThat(discountService).isInstanceOf(DiscountService.class);
+	assertThat(discountPrice).isEqualTo(1000);
+	}
+	
+	static class DiscountService {
+		private final Map<String, DiscountPolicy> policyMap;
+		private final List<DiscountPolicy> policies;
+		public DiscountService(Map<String, DiscountPolicy> policyMap, List<DiscountPolicy> policies) {
+			super();
+			this.policyMap = policyMap;
+			this.policies = policies;
+			
+			System.out.println("policyMap="+policyMap);
+			System.out.println("policies="+policies);
+			
+			
+			
+		}
+	
+		public int discount(Member member,int price , String discountCode) {
+			
+			DiscountPolicy discountPolicy = policyMap.get(discountCode);
+			
+			
+			return discountPolicy.discount(member, price);
+		}
+		
+	}
+	
+	
+	******자동과 수동의 의존주입의 실무기준*****
+	
+	편리한 자동 기능을 기본으로 사용하자
+그러면 어떤 경우에 컴포넌트 스캔과 자동 주입을 사용하고, 어떤 경우에 설정 정보를 통해서 수동으로 빈을 등록하고, 
+의존관계도 수동으로 주입해야 할까?
+결론부터 이야기하면, 스프링이 나오고 시간이 갈 수록 점점 자동을 선호하는 추세다. 스프링은 @Component 뿐만 아
+니라 @Controller , @Service , @Repository 처럼 계층에 맞추어 일반적인 애플리케이션 로직을 자동으로 스
+캔할 수 있도록 지원한다. 거기에 더해서 최근 스프링 부트는 컴포넌트 스캔을 기본으로 사용하고, 스프링 부트의 다양
+한 스프링 빈들도 조건이 맞으면 자동으로 등록하도록 설계했다.
+설정 정보를 기반으로 애플리케이션을 구성하는 부분과 실제 동작하는 부분을 명확하게 나누는 것이 이상적이지만, 개
+발자 입장에서 스프링 빈을 하나 등록할 때 @Component 만 넣어주면 끝나는 일을 @Configuration 설정 정보에
+가서 @Bean 을 적고, 객체를 생성하고, 주입할 대상을 일일이 적어주는 과정은 상당히 번거롭다.
+또 관리할 빈이 많아서 설정 정보가 커지면 설정 정보를 관리하는 것 자체가 부담이 된다.
+그리고 결정적으로 자동 빈 등록을 사용해도 OCP, DIP를 지킬 수 있다.
+그러면 수동 빈 등록은 언제 사용하면 좋을까?
+
+
+애플리케이션은 크게 업무 로직과 기술 지원 로직으로 나눌 수 있다.
+업무 로직 빈: 웹을 지원하는 컨트롤러, 핵심 비즈니스 로직이 있는 서비스, 데이터 계층의 로직을 처리하는 리포
+지토리등이 모두 업무 로직이다. 보통 비즈니스 요구사항을 개발할 때 추가되거나 변경된다.
+기술 지원 빈: 기술적인 문제나 공통 관심사(AOP)를 처리할 때 주로 사용된다. 데이터베이스 연결이나, 공통 로그
+처리 처럼 업무 로직을 지원하기 위한 하부 기술이나 공통 기술들이다.
+업무 로직은 숫자도 매우 많고, 한번 개발해야 하면 컨트롤러, 서비스, 리포지토리 처럼 어느정도 유사한 패턴이
+있다. 이런 경우 자동 기능을 적극 사용하는 것이 좋다. 보통 문제가 발생해도 어떤 곳에서 문제가 발생했는지 명
+확하게 파악하기 쉽다.
+기술 지원 로직은 업무 로직과 비교해서 그 수가 매우 적고, 보통 애플리케이션 전반에 걸쳐서 광범위하게 영향을
+미친다. 그리고 업무 로직은 문제가 발생했을 때 어디가 문제인지 명확하게 잘 드러나지만, 기술 지원 로직은 적용
+이 잘 되고 있는지 아닌지 조차 파악하기 어려운 경우가 많다. 그래서 이런 기술 지원 로직들은 가급적 수동 빈 등
+록을 사용해서 명확하게 드러내는 것이 좋다.
+애플리케이션에 광범위하게 영향을 미치는 기술 지원 객체는 수동 빈으로 등록해서 딱! 설정 정보에 바로 나타나게 하는
+것이 유지보수 하기 좋다.
+
+
+
+해
