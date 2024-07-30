@@ -1,4 +1,6 @@
 # SpringBaseRemind
+
+![수료증1](https://github.com/user-attachments/assets/d46e73e6-074a-4cc7-8767-a31cfd54c977)
 STEP 1 : 2024/07/26 전반적인 스프링구조 , 동작방식 , MVC,api ,정적컨텐츠, 메이븐 빌드,실행
 #
 STEP 2 : 2024/07/26 회원도메인설계 ,테스트도구(junit) 활용 테스트
