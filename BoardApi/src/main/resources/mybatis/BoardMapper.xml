@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <mapper namespace="com.sist.repository.BoardMapper">
+	
+	<select id="boardList" parameterType="int" resultType="BoardDTO">
+	Select * from board Order by no DESC 
+	LIMIT #{start},10 
+	</select>
+	
+	<select id="boardTotalPage" resultType="int">
+	Select Count(*) from Board
+	</select>
+	
+	<select id="boardDetail" parameterType="int" resultType="BoardDTO">
+	SELECT * FROM Board WHERE no=#{no}
+	</select>
+	
+	<insert id="boardInsert" parameterType="BoardDTO">
+	Insert into board (writer,content,pwd)
+	values(#{writer},#{content},#{pwd})
+	</insert>
+	
+	<select id="pwdCheck">
+	SELECT pwd from board where no=#{no}
+	</select>
+	
+	<delete id="boardDelete">
+	Delete from BOARD WHERE no=#{no}
+	</delete>
+	
+	
+ </mapper>

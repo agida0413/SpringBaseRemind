@@ -1,0 +1,275 @@
+
+
+2024/07/28
+
+
+***싱글톤 생성 
+	private static final SingletonService instance = new SingletonService();//static으로 하나만 등록
+	
+	public static SingletonService getInstance() {
+		return instance;
+	}
+	
+	private SingletonService() { //new 로외부에서 생성되는것을 막는다 .
+		
+	}
+	
+	public static void main(String[] args) {
+		
+	}
+	
+	
+	
+	
+	**테스트
+	
+	public class SingletonTest {
+
+	@Test
+	@DisplayName("스프링 없는 순수di컨테이너 ")
+	void pureContainer() {
+		AppConfig appConfig =new AppConfig();
+		
+		MemberService memberService1 = appConfig.memberService();
+		
+		MemberService memberService2 = appConfig.memberService();
+		
+		System.out.println("memberservice1 = "+ memberService1);
+		System.out.println("memberservice2 = "+memberService2);
+		
+		//계속 다른 인스턴스가 생성된다 = >메모리 낭비 
+		
+		//memberservice1 != memberservice2 
+		Assertions.assertThat(memberService1).isNotSameAs(memberService2);
+		
+	}
+	
+	/*
+	 * 싱글톤 패턴은 인스턴스가 1개만 생성되는 것을 보장한다 . 
+	 * 
+	 */
+	
+	
+	@Test
+	@DisplayName("싱글턴 패턴을 이용한 객체사용")
+	void singleTontest() {
+		
+	SingletonService singletonService1=	SingletonService.getInstance();
+	SingletonService singletonService2=	SingletonService.getInstance();
+	
+	System.out.println("memberservice1 = "+ singletonService1);
+	System.out.println("memberservice2 = "+singletonService2);
+	
+	assertThat(singletonService1).isSameAs(singletonService2);
+	//same   == 참조비교
+	//equal  값비교 
+	
+	}
+	
+	****************싱글톤의 문제점**********
+	1. 싱글톤구현 코드구현의 복잡, 문제점
+	2. 의존관계에서의 문제 =>  dip위반 , 구체클래스에서 getInstance
+	결론 = > 유연성이 떨어진다 .=> 안티패턴 
+	
+	
+	
+	*********스프링 컨테이너 ******************
+	스프링컨테이너는 싱글톤 패턴의 문제점을 해결하면서 싱글톤으로 관리할 수 있게한다 .
+	자동 싱글턴 
+	
+	디폴트는 싱글톤 이지만 설정을통해 새로운객체를 생성해서 반환하는 기능도 제공 = > 빈 스코프
+	
+	@Test
+	@DisplayName("스프링 컨테이너와 싱글톤")
+	void SpringContainer() {
+	//AppConfig appConfig =new AppConfig();
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(AppConfig.class);
+		MemberService memberService1 = ac.getBean("memberService",MemberService.class);
+		
+		MemberService memberService2 = ac.getBean("memberService",MemberService.class);
+		
+		System.out.println("memberservice1 = "+ memberService1);
+		System.out.println("memberservice2 = "+memberService2);
+		
+		
+		Assertions.assertThat(memberService1).isSameAs(memberService2);
+	}
+	
+	
+	
+	******싱글톤 방식의 주의점 ********
+	싱글톤 방식은 여러 클라이언트가 하나의 같은 객체인스턴스를 공유하기 때문에 상태를 stateful하게 설계하면 안된다 . 
+	stateless(무상태) 로 설계해야한다 . 
+	특정클라이언트에 의존적인 필드가 있으면 안된다 . 
+	특정 클라이언트가 값을 변경할 수 있는 필드가 안된다 
+	가급적 읽기만 가능해야한다 .
+	필드 대신에 자바에서 공유되지 않는 지역변수 ,파라미터 ,ThreadLocal 등을 사용해야한다  ,
+	스프링 빈의 필드에 공유값을 설정하면 큰 장애가 발생한다.
+	
+	
+	
+	
+	
+	public class SingletonService {
+
+	private static final SingletonService instance = new SingletonService();//static으로 하나만 등록
+	
+	public static SingletonService getInstance() {
+		return instance;
+	}
+	
+	private SingletonService() { //new 로외부에서 생성되는것을 막는다 .
+		
+	}
+	
+	public static void main(String[] args) {
+		
+	}
+}
+	
+	
+	
+	
+	@Test
+	void stateFulServiceSingleton() {
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(TestConfig.class);
+StateFulService stateFulService1 = ac.getBean(StateFulService.class);
+StateFulService stateFulService2 =ac.getBean(StateFulService.class);
+
+	//Thread1 : A사용자 10000원 주문 
+stateFulService1.order("userA", 10000);
+//Thread2 : B사용자 20000원 주문 
+stateFulService1.order("userB", 20000); // 인스턴스를 공유하기 때문에 값이 바뀐다 .
+		
+
+//Thread A : 사용자 A주문 금액 조회 
+
+int price =stateFulService1.getPrice();
+System.out.println("price="+price);//기대값 :10000 결과값 :20000
+
+
+Assertions.assertThat(stateFulService1.getPrice()).isEqualTo(20000);
+	}
+	
+	
+	@Configuration
+	static class TestConfig {
+		
+		@Bean
+		public StateFulService stateFulService() {
+			return new StateFulService();
+		}
+	
+	}
+	
+	
+	
+	
+	
+	
+	<해결 코드 > 
+	
+	
+	
+	public int order(String name, int price) {
+		System.out.println("name="+name+" price= "+price);
+		return price;//여기가 문제 
+	}
+	
+	
+	
+	****의문점 ****
+	Appconfig 에서 분명히 new MemoryMemberRepository를 두번 호출해서 다른 인스턴스가 생성되어야 한다 . 
+	
+	void configurationTest() {
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(AppConfig.class);
+		
+		MemberServiceImpl memberServiceImpl = ac.getBean("memberService",MemberServiceImpl.class);
+		OrderServiceImpl orderServiceImpl =ac.getBean("orderService",OrderServiceImpl.class);
+		
+		MemberRepository memberRepository3 = ac.getBean("memberRepository",MemberRepository.class);
+		MemberRepository memberRepository = memberServiceImpl.getNMemberRepository();
+		MemberRepository memberRepository2 = orderServiceImpl.getMemberRepository();
+		
+		System.out.println("memberService - > memberRepository="+memberRepository);
+		System.out.println("orderService - > memberRepository= "+memberRepository2);
+		System.out.println("memberRespository="+memberRepository3);
+		
+	}
+	
+	하지만 3개 모두 동일한 객체이다 .
+	
+	그럼 혹시 메서드가 호출이 안되는건 아닐까  ?
+	 
+	 
+	로그 
+	//예상 
+	call Appconfig.memberService
+	call Appconfig.memberRepository
+	call Appconfig.memberRepository
+	call Appconfig.orderService
+	call Appconfig.memberRepository
+	
+	
+	
+	BUt 
+	결과
+	
+	call Appconfig.memberService
+	call Appconfig.memberRepository
+	call Appconfig.orderService
+	
+	=> 싱글턴 보장
+	
+	
+		@Bean
+	public MemberService memberService() { //키
+		System.out.println("call Appconfig.memberService");
+		return new MemberServiceImpl( memberRepository());//밸류 로 컨테이너에 등록 
+	}
+	@Bean
+	public MemberRepository memberRepository() {
+		System.out.println("call Appconfig.memberRepository");
+		return new MemoryMemberRepository();
+	}
+	@Bean
+	public OrderService orderService() {
+		System.out.println("call Appconfig.orderService");
+		return new OrderServiceImpl(memberRepository(),discountPolicy());
+	}
+	@Bean
+	public DiscountPolicy discountPolicy() {
+		return new FixDiscountPolicy();
+		//return new RateDiscountPolicy(); 갈아끼우기
+	} 
+	
+	
+	
+	*********@Configuration 과 바이트코드 조작의 마법*****************
+	
+		@Test
+	void configurationDeep() {
+		AnnotationConfigApplicationContext ac= new AnnotationConfigApplicationContext(AppConfig.class);
+AppConfig bean=		ac.getBean(AppConfig.class);
+		System.out.println("bean="+bean.getClass());
+		//bean=class hello.core.AppConfig$$SpringCGLIB$$0
+		
+		//내가만든클래스가 아니라 스프링이 Cglib라는 바이트 코드조작 라이브러리를 사용해서 AppConfig를 상속받은 임의의 다른 클래스를 만들고 그 다른 클래스를 스프링빈으로 등록한것이다 .
+		
+		//에를 들어 appconfig를 상속받은 AppConfig@CGLIB는 메서드들을 오버라이드 해서 이미 컨테이너에 있으면 그 빈을 반환하고 없 으면 기존로직을 호출해서 스프링컨테이너에 등록할 것이다 .
+		
+		
+	}
+	
+	
+	@Configuration을 적용하지않고 @Bean 만 적용하면 ? 
+	Cglb를 사용하지 않고 내가 작성한 AppConfig가 호출되는데 , 이렇게하면 싱글톤이 꺠진다 . 
+	
+	
+	call Appconfig.memberService
+	call Appconfig.memberRepository
+	call Appconfig.memberRepository
+	call Appconfig.orderService
+	call Appconfig.memberRepository
+	이렇게 호출된다 .
+}
