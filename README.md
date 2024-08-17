@@ -75,5 +75,9 @@ Step7,8
 
 
 #
-![수료증1](https://github.com/user-attachments/assets/d46e73e6-074a-4cc7-8767-a31cfd54c977)
+참고 및 수강 : 김영한 -스프링 입문 - 코드로 배우는 스프링 부트, 웹 MVC, DB 접근 기술
+
+
+              김영한-스프링 핵심 원리 - 기본편
+
    
